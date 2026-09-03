@@ -1,11 +1,161 @@
-export type WidgetType = 'metric' | 'bar' | 'table';
+export type WidgetType = "metric" | "bar" | "table";
 export type Filters = { region: string; priority: string };
-export type Widget = { id: string; type: WidgetType; title: string; binding: { field: string }; layout: { span: number } };
-export type DashboardConfig = { version: 2; id: string; title: string; filters: Filters; widgets: Widget[] };
-export type Order = { id:string; region:string; priority:string; orders:number; lateOrders:number; status?:string; state?:string };
-export type Controls = { latency:number; failureRate:number; schemaDrift:boolean };
-export const defaults: DashboardConfig = { version:2,id:'fulfillment-pulse',title:'Fulfillment pulse',filters:{region:'all',priority:'all'},widgets:[{id:'orders',type:'metric',title:'Orders today',binding:{field:'orders'},layout:{span:4}},{id:'late',type:'metric',title:'Late orders',binding:{field:'lateOrders'},layout:{span:4}},{id:'by-status',type:'bar',title:'Orders by status',binding:{field:'status'},layout:{span:4}},{id:'recent',type:'table',title:'Live order queue',binding:{field:'status'},layout:{span:8}}] };
-const record=(x:unknown):x is Record<string,unknown> => !!x && typeof x==='object'&&!Array.isArray(x);
-export function dashboardIssue(x:unknown):string|null { if(!record(x))return 'Configuration must be an object.';if(x.version!==2)return `Unsupported configuration version: ${String(x.version)}.`;if(!Array.isArray(x.widgets))return 'widgets must be an array.';if(x.widgets.length>30)return 'Maximum 30 widgets per dashboard.';return null; }
-export function widgetIssue(x:unknown):string|null {if(!record(x))return 'Widget definition is not an object.';if(typeof x.id!=='string'||!x.id)return 'Widget needs a stable, non-empty ID.';if(!['metric','bar','table'].includes(String(x.type)))return `Widget type “${String(x.type)}” is not available.`;if(!record(x.binding)||typeof x.binding.field!=='string'||!x.binding.field)return 'Expected binding.field to be a non-empty string.';if(!record(x.layout)||!Number.isFinite(x.layout.span)||(x.layout.span as number)<1||(x.layout.span as number)>12)return 'layout.span must be a finite number from 1 to 12.';return null;}
-export function fetchOrders(filters:Filters,c:Controls):Promise<Order[]> {return new Promise((ok,no)=>setTimeout(()=>{if(Math.random()*100<c.failureRate)return no(new Error('The operations data service did not respond. No cached value is shown as live truth.'));let rows:Order[]=[{id:'SO-4812',region:'North',priority:'Critical',status:'shipped',orders:18,lateOrders:1},{id:'SO-4813',region:'South',priority:'Standard',status:'picking',orders:7,lateOrders:0},{id:'SO-4814',region:'West',priority:'Critical',status:'late',orders:4,lateOrders:4},{id:'SO-4815',region:'North',priority:'Standard',status:'picking',orders:11,lateOrders:1},{id:'SO-4816',region:'South',priority:'Critical',status:'shipped',orders:9,lateOrders:0}];rows=rows.filter(r=>(filters.region==='all'||r.region===filters.region)&&(filters.priority==='all'||r.priority===filters.priority));ok(c.schemaDrift?rows.map(({status,...r})=>({...r,state:status})):rows)},c.latency));}
+export type Widget = {
+  id: string;
+  type: WidgetType;
+  title: string;
+  binding: { field: string };
+  layout: { span: number };
+};
+export type DashboardConfig = {
+  version: 2;
+  id: string;
+  title: string;
+  filters: Filters;
+  widgets: Widget[];
+};
+export type Order = {
+  id: string;
+  region: string;
+  priority: string;
+  orders: number;
+  lateOrders: number;
+  status?: string;
+  state?: string;
+};
+export type Controls = {
+  latency: number;
+  failureRate: number;
+  schemaDrift: boolean;
+};
+export const defaults: DashboardConfig = {
+  version: 2,
+  id: "fulfillment-pulse",
+  title: "Fulfillment pulse",
+  filters: { region: "all", priority: "all" },
+  widgets: [
+    {
+      id: "orders",
+      type: "metric",
+      title: "Orders today",
+      binding: { field: "orders" },
+      layout: { span: 4 },
+    },
+    {
+      id: "late",
+      type: "metric",
+      title: "Late orders",
+      binding: { field: "lateOrders" },
+      layout: { span: 4 },
+    },
+    {
+      id: "by-status",
+      type: "bar",
+      title: "Orders by status",
+      binding: { field: "status" },
+      layout: { span: 4 },
+    },
+    {
+      id: "recent",
+      type: "table",
+      title: "Live order queue",
+      binding: { field: "status" },
+      layout: { span: 8 },
+    },
+  ],
+};
+const record = (x: unknown): x is Record<string, unknown> =>
+  !!x && typeof x === "object" && !Array.isArray(x);
+export function dashboardIssue(x: unknown): string | null {
+  if (!record(x)) return "Configuration must be an object.";
+  if (x.version !== 2)
+    return `Unsupported configuration version: ${String(x.version)}.`;
+  if (!Array.isArray(x.widgets)) return "widgets must be an array.";
+  if (x.widgets.length > 30) return "Maximum 30 widgets per dashboard.";
+  return null;
+}
+export function widgetIssue(x: unknown): string | null {
+  if (!record(x)) return "Widget definition is not an object.";
+  if (typeof x.id !== "string" || !x.id)
+    return "Widget needs a stable, non-empty ID.";
+  if (!["metric", "bar", "table"].includes(String(x.type)))
+    return `Widget type “${String(x.type)}” is not available.`;
+  if (
+    !record(x.binding) ||
+    typeof x.binding.field !== "string" ||
+    !x.binding.field
+  )
+    return "Expected binding.field to be a non-empty string.";
+  if (
+    !record(x.layout) ||
+    !Number.isFinite(x.layout.span) ||
+    (x.layout.span as number) < 1 ||
+    (x.layout.span as number) > 12
+  )
+    return "layout.span must be a finite number from 1 to 12.";
+  return null;
+}
+export function fetchOrders(filters: Filters, c: Controls): Promise<Order[]> {
+  return new Promise((ok, no) =>
+    setTimeout(() => {
+      if (Math.random() * 100 < c.failureRate)
+        return no(
+          new Error(
+            "The operations data service did not respond. No cached value is shown as live truth.",
+          ),
+        );
+      let rows: Order[] = [
+        {
+          id: "SO-4812",
+          region: "North",
+          priority: "Critical",
+          status: "shipped",
+          orders: 18,
+          lateOrders: 1,
+        },
+        {
+          id: "SO-4813",
+          region: "South",
+          priority: "Standard",
+          status: "picking",
+          orders: 7,
+          lateOrders: 0,
+        },
+        {
+          id: "SO-4814",
+          region: "West",
+          priority: "Critical",
+          status: "late",
+          orders: 4,
+          lateOrders: 4,
+        },
+        {
+          id: "SO-4815",
+          region: "North",
+          priority: "Standard",
+          status: "picking",
+          orders: 11,
+          lateOrders: 1,
+        },
+        {
+          id: "SO-4816",
+          region: "South",
+          priority: "Critical",
+          status: "shipped",
+          orders: 9,
+          lateOrders: 0,
+        },
+      ];
+      rows = rows.filter(
+        (r) =>
+          (filters.region === "all" || r.region === filters.region) &&
+          (filters.priority === "all" || r.priority === filters.priority),
+      );
+      ok(
+        c.schemaDrift
+          ? rows.map(({ status, ...r }) => ({ ...r, state: status }))
+          : rows,
+      );
+    }, c.latency),
+  );
+}
