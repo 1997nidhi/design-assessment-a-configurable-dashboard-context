@@ -1,0 +1,10 @@
+[
+  null,
+  {"version":1,"widgets":[]},
+  {"version":2,"widgets":"definitely-not-an-array"},
+  {"version":2,"widgets":[{"id":"x","type":"<img onerror=alert(1)>","title":"XSS?","binding":{"field":"orders"},"layout":{"span":4}}]},
+  {"version":2,"widgets":[{"id":"bad-span","type":"metric","title":"Impossible layout","binding":{"field":"orders"},"layout":{"span":999999}}]},
+  {"version":2,"widgets":[{"id":"missing-field","type":"bar","title":"Schema drift","binding":{"field":"dropped_column"},"layout":{"span":4}}]},
+  {"version":2,"widgets":[{"id":"proto","type":"metric","title":"Prototype pollution","binding":{"field":"__proto__"},"layout":{"span":4},"__proto__":{"polluted":true}}]},
+  {"version":2,"widgets":[{}]}
+]
